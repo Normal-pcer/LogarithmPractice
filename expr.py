@@ -127,7 +127,7 @@ class Pow(BinOp):
     def __str__(self) -> str:
         if isinstance(self.left, Log):
             return f"{self.left.func_name()}^{{{self.right}}}{{{_br(self.left.right, 3)}}}"
-        return f"{{{_br(self.left, 4)}}} ^ {{{self.right}}}"
+        return f"{{{_br(self.left, 5)}}} ^ {{{self.right}}}"
 
 
 class Log(BinOp):
@@ -143,7 +143,7 @@ class Log(BinOp):
                 return "\\lg"
             elif self.left.value == "e":
                 return "\\ln"
-        return f"\\log_{{{self.left}}}"
+        return f"\\log_{{{_br(self.left, 5)}}}"
 
     def __str__(self) -> str:
         return f"{self.func_name()}{{{_br(self.right, 3)}}}"

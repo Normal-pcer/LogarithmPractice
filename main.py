@@ -19,10 +19,37 @@ def gen_ans() -> tuple[expr.Node, int]:
     return (expr.Log(expr.Value(base), arg_node), exp)
 
 def main() -> None:
-    lis = [gen_ans() for _ in range(500)]
-    lis = [f"$$ {make_chaos(make_chaos(expr))} = {ans} $$" for expr, ans in lis]
-    lis.sort(key = len)
-    print("\n".join(lis[400:]))
+    print(r"""\documentclass[12pt]{article}
+\usepackage[a4paper, margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{ctex}
+
+\title{对数运算测试题}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{enumerate}""")
+
+    n = 800
+    lis = [gen_ans() for _ in range(n)]
+    lis = [(f"\\item $ {make_chaos(make_chaos(expr))} = \\underline{{\\hspace{{2cm}}}} $", ans) for expr, ans in lis]
+    lis.sort(key = lambda x: len(x[0]))
+
+    for item, _ in lis[(n - 150): (n - 50)]:
+        print(item)
+    
+    print("参考答案\n")
+
+    for i in range(n - 150, n - 50):
+        print(lis[i][1], end = ("; " if (i + 1) % 10 else "\n\n"))
+
+    print(r"""
+\end{enumerate}
+
+\end{document}""")
 
 if __name__ == '__main__':
     main()

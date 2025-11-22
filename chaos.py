@@ -52,7 +52,7 @@ def _replace_constant_with_logarithm(node: expr.Node, depth: int, max_depth: int
     """将常数替换为对数表达式"""
     if isinstance(node, expr.Value) and isinstance(node.value, (int, float)):
         value = node.value
-        
+
         # 常见对数值替换
         if value == 1:
             replacements = [
@@ -66,20 +66,21 @@ def _replace_constant_with_logarithm(node: expr.Node, depth: int, max_depth: int
                 ),  # lg5 + lg2 = lg10 = 1
             ]
             return choice(replacements)
-        
+
         elif value == 2:
             replacements = [
                 expr.Log(expr.Value(2), expr.Value(4)),
                 expr.Log(expr.Value(3), expr.Value(9)),
                 expr.Log(expr.Value(5), expr.Value(25)),
-                expr.Mul(expr.Value(2), expr.Log(expr.Value(2), expr.Value(2))),
+                expr.Mul(expr.Value(2), expr.Log(
+                    expr.Value(2), expr.Value(2))),
                 expr.Add(
                     expr.Log(expr.Value(2), expr.Value(2)),
                     expr.Log(expr.Value(2), expr.Value(2))
                 ),
             ]
             return choice(replacements)
-        
+
         elif value == 0:
             replacements = [
                 expr.Log(expr.Value(2), expr.Value(1)),
@@ -89,7 +90,7 @@ def _replace_constant_with_logarithm(node: expr.Node, depth: int, max_depth: int
                 ),
             ]
             return choice(replacements)
-        
+
         elif value > 0 and random() < 0.3:
             # 尝试将其他正数表示为对数形式
             base = choice([2, 3, 5, 10])
@@ -99,7 +100,7 @@ def _replace_constant_with_logarithm(node: expr.Node, depth: int, max_depth: int
                 return expr.Log(expr.Value(base), expr.Value(base**2))
             elif value == base**3:
                 return expr.Log(expr.Value(base), expr.Value(base**3))
-    
+
     return node
 
 
@@ -109,52 +110,67 @@ def _introduce_polynomial_log_forms(node: expr.Node, depth: int, max_depth: int)
         if random() < 0.2:
             # 创建多项式对数表达式
             forms = [
-                # lg2(lg5 + lg2) + lg5 类型
+                # lg2lg5 + lg2lg2 + lg5 类型
                 lambda: expr.Add(
-                    expr.Mul(
-                        expr.Log(expr.Value(10), expr.Value(2)),
-                        expr.Add(
-                            expr.Log(expr.Value(10), expr.Value(5)),
-                            expr.Log(expr.Value(10), expr.Value(2))
+                    expr.Add(
+                        expr.Mul(
+                            expr.Log(expr.Value(10), expr.Value(2)),
+                            expr.Log(expr.Value(10), expr.Value(5))
+                        ),
+                        expr.Pow(
+                            expr.Log(expr.Value(10), expr.Value(2)),
+                            expr.Value(2)
                         )
                     ),
-                    expr.Log(expr.Value(10), expr.Value(5))
+                    expr.Log(expr.Value(10), expr.Value(5)),
                 ),
-                # (lg2)^2 + (lg5)^2 类型
+                # lg2lg5 + lg5lg5 + lg2
                 lambda: expr.Add(
-                    expr.Mul(
-                        expr.Log(expr.Value(10), expr.Value(2)),
-                        expr.Log(expr.Value(10), expr.Value(2))
-                    ),
-                    expr.Mul(
-                        expr.Log(expr.Value(10), expr.Value(5)),
-                        expr.Log(expr.Value(10), expr.Value(5))
-                    )
-                ),
-                # lg2*lg5 + lg2 + lg5 类型
-                lambda: expr.Add(
-                    expr.Mul(
-                        expr.Log(expr.Value(10), expr.Value(2)),
-                        expr.Log(expr.Value(10), expr.Value(5))
-                    ),
                     expr.Add(
-                        expr.Log(expr.Value(10), expr.Value(2)),
-                        expr.Log(expr.Value(10), expr.Value(5))
-                    )
+                        expr.Mul(
+                            expr.Log(expr.Value(10), expr.Value(2)),
+                            expr.Log(expr.Value(10), expr.Value(5))
+                        ),
+                        expr.Pow(
+                            expr.Log(expr.Value(10), expr.Value(5)),
+                            expr.Value(2)
+                        )
+                    ),
+                    expr.Log(expr.Value(10), expr.Value(2)),
                 ),
+                # (lg2)^2 + (lg5)^2 + 2(lg2)(lg5) 类型
+                lambda: expr.Add(
+                    expr.Add(
+                        expr.Mul(
+                            expr.Log(expr.Value(10), expr.Value(2)),
+                            expr.Log(expr.Value(10), expr.Value(2))
+                        ),
+                        expr.Mul(
+                            expr.Log(expr.Value(10), expr.Value(5)),
+                            expr.Log(expr.Value(10), expr.Value(5))
+                        )
+                    ),
+                    expr.Mul(
+                        expr.Mul(
+                            expr.Value(2),
+                            expr.Log(expr.Value(10), expr.Value(5))
+                        ),
+                        expr.Log(expr.Value(10), expr.Value(2))
+                    )
+                )
             ]
-            return choice(forms)()
-    
+            return expr.Mul(node, choice(forms)())
+
     elif isinstance(node, expr.Add) and random() < 0.1:
         # 在加法表达式中引入对数多项式
-        return expr.Add(
-            expr.Mul(
+        return expr.Mul(
+            expr.Add(
                 expr.Log(expr.Value(10), expr.Value(2)),
                 expr.Log(expr.Value(10), expr.Value(5))
             ),
             node
         )
-    
+
     return node
 
 
@@ -226,11 +242,11 @@ def _apply_log_multiplication_rule(node: expr.Node, depth: int, max_depth: int) 
     if isinstance(node, expr.Mul) and isinstance(node.left, expr.Value) and isinstance(node.right, expr.Log):
         k = node.left.value
         log_expr = node.right
-        
+
         if isinstance(k, (int, float)) and k > 0:
             new_arg = expr.Pow(log_expr.right, expr.Value(k))
             return expr.Log(log_expr.left, new_arg)
-    
+
     return node
 
 
@@ -289,7 +305,7 @@ def _apply_double_change_of_base(node: expr.Node, depth: int, max_depth: int) ->
             expr.Log(intermediate_base, node.right),
             expr.Log(intermediate_base, node.left)
         )
-        
+
         # 对结果再次应用复杂化
         return make_chaos(first_change, depth + 1, max_depth)
     return node
@@ -325,21 +341,21 @@ def _introduce_fraction_forms(node: expr.Node, depth: int, max_depth: int) -> ex
             numerator = node.value * randint(2, 4)
             denominator = randint(2, 4)
             return expr.Div(expr.Value(numerator), expr.Value(denominator))
-    
+
     elif isinstance(node, (expr.Add, expr.Sub)):
         # 将加减法转换为同分母分数加减
         if random() < 0.3:
             denominator = expr.Value(randint(2, 5))
             left_num = expr.Mul(node.left, denominator)
             right_num = expr.Mul(node.right, denominator)
-            
+
             if isinstance(node, expr.Add):
                 numerator = expr.Add(left_num, right_num)
             else:
                 numerator = expr.Sub(left_num, right_num)
-            
+
             return expr.Div(numerator, denominator)
-    
+
     return node
 
 
@@ -379,7 +395,8 @@ def _split_numeric_coefficient(node: expr.Node, depth: int, max_depth: int) -> e
         else:
             # 乘法拆分
             if isinstance(node.value, int) and node.value > 1:
-                factors = [i for i in range(2, abs(node.value)) if node.value % i == 0]
+                factors = [i for i in range(
+                    2, abs(node.value)) if node.value % i == 0]
                 if factors:
                     m = choice(factors)
                     n = node.value // m
@@ -422,7 +439,8 @@ def _introduce_identity_operations(node: expr.Node, depth: int, max_depth: int) 
             return expr.Add(node, choice(zero_forms))
         elif isinstance(node, expr.Div):
             # 分子分母同乘一个非零表达式
-            multiplier = choice([f for f in one_forms if not isinstance(f, expr.Value) or f.value != 0])
+            multiplier = choice(
+                [f for f in one_forms if not isinstance(f, expr.Value) or f.value != 0])
             return expr.Div(
                 expr.Mul(node.left, multiplier),
                 expr.Mul(node.right, multiplier)
@@ -438,7 +456,7 @@ def generate_complex_logarithm_exercises(count: int = 10, max_depth: int = 4) ->
     返回: [(复杂表达式, 简化表达式), ...]
     """
     exercises = []
-    
+
     # 基础对数表达式模板
     base_templates = [
         # 简单对数
@@ -446,11 +464,13 @@ def generate_complex_logarithm_exercises(count: int = 10, max_depth: int = 4) ->
         lambda: expr.Log(expr.Value(3), expr.Value(27)),
         lambda: expr.Log(expr.Value(5), expr.Value(25)),
         lambda: expr.Log(expr.Value(10), expr.Value(100)),
-        
+
         # 带系数的对数
-        lambda: expr.Mul(expr.Value(2), expr.Log(expr.Value(2), expr.Value(4))),
-        lambda: expr.Mul(expr.Value(3), expr.Log(expr.Value(3), expr.Value(9))),
-        
+        lambda: expr.Mul(expr.Value(2), expr.Log(
+            expr.Value(2), expr.Value(4))),
+        lambda: expr.Mul(expr.Value(3), expr.Log(
+            expr.Value(3), expr.Value(9))),
+
         # 对数运算
         lambda: expr.Add(
             expr.Log(expr.Value(2), expr.Value(8)),
@@ -460,21 +480,21 @@ def generate_complex_logarithm_exercises(count: int = 10, max_depth: int = 4) ->
             expr.Log(expr.Value(2), expr.Value(16)),
             expr.Log(expr.Value(2), expr.Value(4))
         ),
-        
+
         # 多项式对数形式
         lambda: expr.Value(1),  # 会被替换为复杂形式
         lambda: expr.Value(2),  # 会被替换为复杂形式
     ]
-    
+
     for _ in range(count):
         # 选择基础模板
         base_expr = choice(base_templates)()
-        
+
         # 应用复杂化
         complex_expr = make_chaos(base_expr, max_depth=max_depth)
-        
+
         exercises.append((complex_expr, base_expr))
-    
+
     return exercises
 
 
@@ -482,7 +502,7 @@ def generate_complex_logarithm_exercises(count: int = 10, max_depth: int = 4) ->
 if __name__ == "__main__":
     # 生成10个复杂对数表达式练习题
     exercises = generate_complex_logarithm_exercises(10, max_depth=4)
-    
+
     for i, (complex_expr, simple_expr) in enumerate(exercises, 1):
         print(f"题目 {i}:")
         print(f"复杂表达式: {complex_expr}")
