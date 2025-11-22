@@ -1,4 +1,5 @@
 from random import choice, randint
+from chaos import make_chaos
 import expr
 
 def gen_ans() -> expr.Node:
@@ -17,8 +18,10 @@ def gen_ans() -> expr.Node:
     return expr.Log(expr.Value(base), arg_node)
 
 def main() -> None:
-    ans = gen_ans()
-    print(ans)
+    for _ in range(100):
+        ans = gen_ans()
+        chaos = make_chaos(ans)
+        print('$$', ans, '=', chaos, '$$')
 
 if __name__ == '__main__':
     main()
