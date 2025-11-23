@@ -97,9 +97,10 @@ class Mul(BinOp):
 
     def __str__(self) -> str:
         p = self.right
-        while isinstance(p, Pow):
+        while isinstance(p, Pow) or isinstance(p, Mul):
             p = p.left
-        cross_mul = isinstance(p, Value) and p.is_num()  # 是否使用乘号
+        cross_mul = (isinstance(p, Value) and p.is_num()  # 两数相乘用乘号
+            or (isinstance(p, Div) and isinstance(p.left, Value) and isinstance(p.right, Value))) # 避免和带分数混淆
         if cross_mul:
             return f"{_br(self.left, self.prio)} \\times {self.right}"
         else:

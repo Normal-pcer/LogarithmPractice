@@ -1,6 +1,5 @@
 from random import choice, randint
 from chaos import make_chaos
-# from copy import deepcopy
 import expr
 
 def gen_ans() -> tuple[expr.Node, int]:
